@@ -186,7 +186,7 @@ public class GenerateInfoFiles {
     public static boolean createProductsFile(int productsCount) {
     	// Save the product in the product list
         // productsInfo.add(new Integer[]{productId, (int)(price * 100)});
-
+        // Mi codigo nuevo
 		return true;
     }
 
