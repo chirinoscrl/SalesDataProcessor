@@ -72,6 +72,7 @@ public class GenerateInfoFiles {
 
             // Generate salespeople information file
             boolean salesPeopleFileCreated = createSalesManInfoFile(numberOfSalespeople);
+
             if (!salesPeopleFileCreated) {
                 throw new Exception("Failed to create salespeople information file");
             }
@@ -186,9 +187,30 @@ public class GenerateInfoFiles {
     public static boolean createProductsFile(int productsCount) {
     	// Save the product in the product list
         // productsInfo.add(new Integer[]{productId, (int)(price * 100)});
-        // Mi codigo nuevo
-		return true;
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(PRODUCTS_FILE_PATH))) {
+            // Clear the products list before generating it again
+            productsInfo.clear();
+
+            // Generate random products entries
+            for (int i = 0; i < productsCount; i++) {
+                int productId = random.nextInt(PRODUCT_NAMES.length);
+                int productPrice = random.nextInt(10) * 100;
+
+
+                // Save the product data in the list for later use
+                productsInfo.add(new Integer[]{productId, productPrice});
+
+                writer.write(productId + ";" + productPrice);
+                writer.newLine();
+            }
+
+            return true;
+        } catch (IOException e) {
+            System.err.println("Error creating salespeople file: " + e.getMessage());
+            return false;
+        }
     }
+
 
     /**
      * Creates a file with pseudo-random salesperson information.
