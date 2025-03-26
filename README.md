@@ -86,7 +86,7 @@ The project contains two executable classes:
 
 ## Development Environment
 
-- Java 21
+- Java 8
 - Eclipse IDE for Java Developers
 
 ## Project Timeline
