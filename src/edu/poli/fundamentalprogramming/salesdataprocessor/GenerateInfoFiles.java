@@ -63,6 +63,9 @@ public class GenerateInfoFiles {
      */
     public static void main(String[] args) {
         try {
+            // Clear old files to ensure a clean start
+            clearOldFiles();
+
             // Create necessary directories
             createDirectoryStructure();
 
@@ -72,6 +75,7 @@ public class GenerateInfoFiles {
 
             // Generate salespeople information file
             boolean salesPeopleFileCreated = createSalesManInfoFile(numberOfSalespeople);
+
             if (!salesPeopleFileCreated) {
                 throw new Exception("Failed to create salespeople information file");
             }
@@ -141,54 +145,86 @@ public class GenerateInfoFiles {
      * @param name Name of the salesperson (not used in the file but for naming)
      * @param id ID number of the salesperson
      * @param documentType Type of ID document (CC, CE, NIT, etc.)
+     * @return true if the file was created successfully, false otherwise
+     */
+	public static boolean createSalesMenFile(int randomSalesCount, String name, long id, String documentType) {
+	    // Validate that product information is available
+	    if (productsInfo.isEmpty()) {
+	        System.err.println("Error: No product information available. Cannot generate sales file for " + name);
+	        return false;
+	    }
+
+	    // Create a unique filename based on salesperson's information
+	    String fileName = SALES_FILE_PREFIX + documentType + "_" + id + ".csv";
+
+	    try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileName))) {
+	        // Write the header line with salesperson identification
+	        writer.write(documentType + ";" + id);
+	        writer.newLine();
+
+	        // Generate random sales records using real products
+	        for (int i = 0; i < randomSalesCount; i++) {
+	            Integer[] productInfo = productsInfo.get(random.nextInt(productsInfo.size()));
+	            int productId = productInfo[0];
+	            int quantitySold = 1 + random.nextInt(20);   // Random quantity between 1-20
+
+	            writer.write(productId + ";" + quantitySold);
+	            writer.newLine();
+	        }
+
+	        return true;
+	    } catch (IOException e) {
+	        System.err.println("Error creating sales file: " + e.getMessage());
+	        return false;
+	    }
+	}
+
+
+    /**
+     * Creates a file with pseudo-random product information.
+     * The file format is:
+     * ProductID1;ProductName1;PricePerUnit1
+     * ProductID2;ProductName2;PricePerUnit2
+     * ...
+     *
+     * @param productsCount Number of products to generate
      * @return true if file was created successfully, false otherwise
      */
-    public static boolean createSalesMenFile(int randomSalesCount, String name, long id, String documentType) {
-        // Create a unique filename based on salesperson's information
-        String fileName = SALES_FILE_PREFIX + documentType + "_" + id + ".csv";
+    public static boolean createProductsFile(int productsCount) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(PRODUCTS_FILE_PATH))) {
+            // Clear the products list to ensure no duplicate data from previous runs
+            productsInfo.clear();
 
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileName))) {
-            // Write the header line with salesperson identification
-            writer.write(documentType + ";" + id);
-            writer.newLine();
+            // Generate random products entries
+            for (int i = 0; i < productsCount; i++) {
+                // Generate a unique product ID based on the product name index
+                int productId = random.nextInt(PRODUCT_NAMES.length);
 
-            // Generate random sales records using real products
-            for (int i = 0; i < randomSalesCount; i++) {
-                Integer[] productInfo;
+                // Select a product name from the predefined list
+                String productName = PRODUCT_NAMES[i % PRODUCT_NAMES.length];
 
-                // If products are available, use a random one from the generated list
-                if (!productsInfo.isEmpty()) {
-                    productInfo = productsInfo.get(random.nextInt(productsInfo.size()));
-                    int productId = productInfo[0];
-                    int quantitySold = 1 + random.nextInt(20);   // Random quantity between 1-20
-
-                    writer.write(productId + ";" + quantitySold + ";");
-                } else {
-                    // If no products are available, generate random ID (fallback)
-                    int productId = 1000 + random.nextInt(9000);
-                    int quantitySold = 1 + random.nextInt(20);
-
-                    writer.write(productId + ";" + quantitySold + ";");
+                // Append an index to the name if duplicates are possible
+                if (productsCount > PRODUCT_NAMES.length && i >= PRODUCT_NAMES.length) {
+                    productName += " " + (i / PRODUCT_NAMES.length + 1);
                 }
+
+                // Generate a random price between 1,000 and 100,000
+                int productPrice = 1000 + random.nextInt(100000 - 1000 + 1);
+
+                // Save the product data in the list for later use
+                productsInfo.add(new Integer[]{productId, productPrice});
+
+                writer.write(productId + ";" + productName + ";" + productPrice);
                 writer.newLine();
             }
 
             return true;
         } catch (IOException e) {
-            System.err.println("Error creating sales file: " + e.getMessage());
+            System.err.println("Error creating products file: " + e.getMessage());
             return false;
         }
     }
 
-    /**
-     * Creates a file with pseudo-random product information.
-     */
-    public static boolean createProductsFile(int productsCount) {
-    	// Save the product in the product list
-        // productsInfo.add(new Integer[]{productId, (int)(price * 100)});
-
-		return true;
-    }
 
     /**
      * Creates a file with pseudo-random salesperson information.
@@ -240,4 +276,54 @@ public class GenerateInfoFiles {
         }
         return !directory.isDirectory();
     }
+
+    /**
+     * Clears old files from the predefined directories used in the application.
+     * 
+     * This method ensures that no leftover files from previous runs interfere 
+     * with the current execution by performing the following actions:
+     * - Deletes all files within the input directory.
+     * - Deletes all files within the salespeople directory.
+     * - Deletes all files within the output directory.
+     * 
+     * The directories themselves are not deleted, only their contents are cleared.
+     * Uses the `deleteFilesInDirectory` method to perform the deletions.
+     */
+    private static void clearOldFiles() {
+        // Delete files in the input directory
+        deleteFilesInDirectory(new File(INPUT_DIR));
+
+        // Delete files in the salespeople directory
+        deleteFilesInDirectory(new File(SALESPEOPLE_DIR));
+
+        // Delete files in the output directory
+        deleteFilesInDirectory(new File(OUTPUT_DIR));
+    }
+
+    /**
+     * Deletes all files in the specified directory.
+     *
+     * If the provided directory exists and is a valid directory, this method iterates
+     * through all the files in the directory and deletes them. It does not delete
+     * subdirectories or their contents.
+     *
+     * If a file cannot be deleted, an error message is printed to the standard error output.
+     *
+     * @param directory The directory whose files are to be deleted. Should be a valid directory object.
+     */
+    private static void deleteFilesInDirectory(File directory) {
+        if (directory.exists() && directory.isDirectory()) {
+            File[] files = directory.listFiles();
+            if (files != null) {
+                for (File file : files) {
+                    if (file.isFile()) {
+                        if (!file.delete()) {
+                            System.err.println("Failed to delete file: " + file.getAbsolutePath());
+                        }
+                    }
+                }
+            }
+        }
+    }
+
 }
