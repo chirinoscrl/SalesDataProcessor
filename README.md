@@ -97,8 +97,7 @@ The project contains two executable classes:
 
 ## Authors
 
-- [Your Name]
-- [Team Member Names]
+-  Rosanny Chirinos Centeno
 
 ## License
 
