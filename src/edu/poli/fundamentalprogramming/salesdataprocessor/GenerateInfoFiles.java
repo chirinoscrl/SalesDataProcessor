@@ -52,21 +52,20 @@ public class GenerateInfoFiles {
     };
 
     // Lists to store generated information for use between methods
-    private static List<String[]> salespeopleInfo = new ArrayList<>();
-    private static List<Integer[]> productsInfo = new ArrayList<>();
+    private static final List<String[]> salespeopleInfo = new ArrayList<>();
+    private static final List<Integer[]> productsInfo = new ArrayList<>();
 
     /**
-     * Main method that executes the file generation process.
+     * Method that executes the file generation process.
      * Creates test files with pseudo-random data for sales, products, and salespeople.
-     *
-     * @param args Command line arguments (not used)
+     * Previously was the main method, now can be called from other classes.
      */
-    public static void main(String[] args) {
+    public static void generateAllFiles() {
         try {
             // Clear old files to ensure a clean start
             clearOldFiles();
 
-            // Create necessary directories
+            // Create the necessary directories
             createDirectoryStructure();
 
             // Define the number of entities to generate
@@ -80,7 +79,7 @@ public class GenerateInfoFiles {
                 throw new Exception("Failed to create salespeople information file");
             }
 
-            // Generate products information file
+            // Generate a product information file
             boolean productsFileCreated = createProductsFile(numberOfProducts);
             if (!productsFileCreated) {
                 throw new Exception("Failed to create products information file");
@@ -179,7 +178,6 @@ public class GenerateInfoFiles {
 	    }
 	}
 
-
     /**
      * Creates a file with pseudo-random product information.
      * The file format is:
@@ -192,13 +190,13 @@ public class GenerateInfoFiles {
      */
     public static boolean createProductsFile(int productsCount) {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(PRODUCTS_FILE_PATH))) {
-            // Clear the products list to ensure no duplicate data from previous runs
+            // Clear the product list to ensure no duplicate data from previous runs
             productsInfo.clear();
 
             // Generate random products entries
             for (int i = 0; i < productsCount; i++) {
-                // Generate a unique product ID based on the product name index
-                int productId = random.nextInt(PRODUCT_NAMES.length);
+                // Generate a unique product ID starting from 1000 to avoid conflicts
+                int productId = 1000 + i;
 
                 // Select a product name from the predefined list
                 String productName = PRODUCT_NAMES[i % PRODUCT_NAMES.length];
@@ -225,7 +223,6 @@ public class GenerateInfoFiles {
         }
     }
 
-
     /**
      * Creates a file with pseudo-random salesperson information.
      * The file format is:
@@ -234,7 +231,7 @@ public class GenerateInfoFiles {
      * ...
      *
      * @param salesmanCount Number of salespeople to generate
-     * @return true if file was created successfully, false otherwise
+     * @return true if a file was created successfully, false otherwise
      */
     public static boolean createSalesManInfoFile(int salesmanCount) {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(SALESPEOPLE_FILE_PATH))) {
@@ -279,13 +276,13 @@ public class GenerateInfoFiles {
 
     /**
      * Clears old files from the predefined directories used in the application.
-     * 
+     * <p>
      * This method ensures that no leftover files from previous runs interfere 
      * with the current execution by performing the following actions:
      * - Deletes all files within the input directory.
      * - Deletes all files within the salespeople directory.
      * - Deletes all files within the output directory.
-     * 
+     * <p>
      * The directories themselves are not deleted, only their contents are cleared.
      * Uses the `deleteFilesInDirectory` method to perform the deletions.
      */
@@ -302,11 +299,11 @@ public class GenerateInfoFiles {
 
     /**
      * Deletes all files in the specified directory.
-     *
+     * <p>
      * If the provided directory exists and is a valid directory, this method iterates
      * through all the files in the directory and deletes them. It does not delete
      * subdirectories or their contents.
-     *
+     * <p>
      * If a file cannot be deleted, an error message is printed to the standard error output.
      *
      * @param directory The directory whose files are to be deleted. Should be a valid directory object.

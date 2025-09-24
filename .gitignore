@@ -95,3 +95,4 @@ replay_pid*
 
 data/input/*
 data/output/*
+.idea/
