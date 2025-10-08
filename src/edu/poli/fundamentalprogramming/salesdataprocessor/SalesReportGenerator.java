@@ -20,11 +20,14 @@ public class SalesReportGenerator {
     private static final String PRODUCTS_FILE_PATH = INPUT_DIR + "/products.csv";
     private static final String SALESPEOPLE_FILE_PATH = INPUT_DIR + "/salespeople.csv";
     private static final String VENDOR_REPORT_FILE_PATH = OUTPUT_DIR + "/sales_report.csv";
+    private static final String PRODUCTS_REPORT_FILE_PATH = OUTPUT_DIR + "/products_report.csv";
 
     // Data structures to store information from input files
     private static final Map<String, String> salespeopleMap = new HashMap<>();
     private static final Map<Integer, Integer> productsMap = new HashMap<>();
+    private static final Map<Integer, String> productNamesMap = new HashMap<>();
     private static final Map<String, Double> vendorRevenueMap = new HashMap<>();
+    private static final Map<Integer, Integer> productQuantityTotals = new HashMap<>();
 
     /**
      * Main method that executes the sales report generation process.
@@ -47,9 +50,12 @@ public class SalesReportGenerator {
 
             // Generate and save the vendor report
             generateVendorReport();
+            // Generate and save the product report
+            generateProductReport();
 
             System.out.println("Sales report generated successfully!");
             System.out.println("Vendor report saved to: " + VENDOR_REPORT_FILE_PATH);
+            System.out.println("Product report saved to: " + PRODUCTS_REPORT_FILE_PATH);
 
         } catch (Exception e) {
             System.err.println("Error generating sales report: " + e.getMessage());
@@ -111,8 +117,10 @@ public class SalesReportGenerator {
                 String[] parts = line.split(";");
                 if (parts.length >= 3) {
                     int productId = Integer.parseInt(parts[0]);
+                    String productName = parts[1];
                     int price = Integer.parseInt(parts[2]);
                     productsMap.put(productId, price);
+                    productNamesMap.put(productId, productName);
                 }
             }
         }
@@ -188,6 +196,9 @@ public class SalesReportGenerator {
                         int productId = Integer.parseInt(parts[0]);
                         int quantitySold = Integer.parseInt(parts[1]);
 
+                        // Accumulate product total quantities
+                        productQuantityTotals.put(productId, productQuantityTotals.getOrDefault(productId, 0) + quantitySold);
+
                         Integer productPrice = productsMap.get(productId);
                         if (productPrice != null) {
                             totalRevenue += productPrice * quantitySold;
@@ -242,6 +253,46 @@ public class SalesReportGenerator {
         System.out.println("\n=== VENDOR REVENUE REPORT ===");
         for (Map.Entry<String, Double> entry : sortedVendors) {
             System.out.printf("%s: $%.0f%n", entry.getKey(), entry.getValue());
+        }
+    }
+
+    /**
+     * Generates the product sales report and saves it to a CSV file.
+     * Format per line: ProductName;TotalQuantitySold
+     * Sorted by TotalQuantitySold in descending order.
+     *
+     * @throws IOException if the output file cannot be written
+     */
+    private static void generateProductReport() throws IOException {
+        System.out.println("Generating products report...");
+
+        // Ensure output directory exists
+        File outputDir = new File(OUTPUT_DIR);
+        if (!outputDir.exists()) {
+            outputDir.mkdirs();
+        }
+
+        // Prepare and sort products by quantity sold (descending)
+        List<Map.Entry<Integer, Integer>> sortedProducts = new ArrayList<>(productQuantityTotals.entrySet());
+        sortedProducts.sort((e1, e2) -> Integer.compare(e2.getValue(), e1.getValue()));
+
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(PRODUCTS_REPORT_FILE_PATH))) {
+            for (Map.Entry<Integer, Integer> entry : sortedProducts) {
+                int productId = entry.getKey();
+                int totalQty = entry.getValue();
+                String productName = productNamesMap.getOrDefault(productId, String.valueOf(productId));
+                writer.write(productName + ";" + totalQty);
+                writer.newLine();
+            }
+        }
+
+        System.out.println("Products report contains " + sortedProducts.size() + " products");
+
+        // Optional console summary
+        System.out.println("\n=== PRODUCT SALES REPORT ===");
+        for (Map.Entry<Integer, Integer> entry : sortedProducts) {
+            String productName = productNamesMap.getOrDefault(entry.getKey(), String.valueOf(entry.getKey()));
+            System.out.printf("%s: %d units%n", productName, entry.getValue());
         }
     }
 }
